@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto" data-theme="auto">
+
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Lessons from building a Dart code generator | Tom Handcock</title>
+<meta name="keywords" content="Dart, Flutter">
+<meta name="description" content="An account of some of the learnings from implementing Flumepod.">
+<meta name="author" content="">
+<link rel="canonical" href="http://localhost:1313/posts/lessons-from-building-a-dart-code-generator/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.cd9298b33628769aa1bc1acebbbfd7aa11ce81dfe03484d479e1907760249a1d.css" integrity="sha256-zZKYszYodpqhvBrOu7/XqhHOgd/gNITUeeGQd2Akmh0=" rel="preload stylesheet" as="style">
+<link rel="icon" href="http://localhost:1313/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
+<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
+<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/lessons-from-building-a-dart-code-generator/">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --code-block-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+                color-scheme: dark;
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .toc {
+                background: var(--entry);
+            }
+        }
+
+    </style>
+</noscript>
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else if (localStorage.getItem("pref-theme") === "light") {
+       document.querySelector("html").dataset.theme = 'light';
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.querySelector("html").dataset.theme = 'dark';
+    } else {
+        document.querySelector("html").dataset.theme = 'light';
+    }
+
+</script>
+</head>
+<body id="top">
+    <header class="header">
+    <nav class="header-nav">
+        <div class="logo">
+            <a href="http://localhost:1313/" accesskey="h" title="Tom Handcock (Alt + H)">Tom Handcock</a>
+            <div class="logo-switches">
+                <button id="theme-toggle" class="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
+                    <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <ul id="menu" class="menu">
+            <li>
+                <a href="http://localhost:1313/posts/" title="Posts">
+                    <span>Posts</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <nav class="breadcrumbs" role="navigation" aria-label="Breadcrumb">
+            <a href="/">Home</a>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+                <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <a href="/posts/">Posts</a>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right">
+        <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+</nav>
+    <h1 class="post-title entry-hint-parent">
+      Lessons from building a Dart code generator
+    </h1>
+    <div class="post-meta">
+
+<span title='2026-08-29 12:00:00 +0100 BST'>29 August 2026</span>&nbsp;·&nbsp;<span>5 min</span>
+
+</div>
+  </header> 
+  <div class="post-content md-content"><p>I have recently collaborated on <a href="https://pub.dev/packages/flumepod">Flumepod</a>, a code generator for bridging the gap between Riverpod and Mockito; allowing you to generate mocks of <code>Notifier</code> classes for stubbing and verification. This is a post about some of the things I learnt along the way that I wish I had known from the start, published in the hopes it will help other developers.</p>
+<p>Code generators, especially those that use introspection on existing code, are an inherently messy domain. You are ultimately operating with untyped strings and even in a relatively streamlined language such as Dart, there are many edge cases you have to be mindful of, such as generic types, handling duplicate symbols when resolving imports, and how asynchronous code can impact <a href="https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/">the &ldquo;colour&rdquo; of the output</a>. Not to mention keeping the generator source coherent and maintainable as the language specification changes overtime.</p>
+<p>Most code generators rely on first analysing existing code in order to derive more code. For example, one of the most popular packages in the Dart ecosystem, <a href="https://pub.dev/packages/freezed">Freezed</a>, generates immutable &ldquo;data classes&rdquo; with a handful of utility methods from basic factory definitions. When building such a code generator, it may be tempting to try and abstract away all of the complexity in the Dart type system behind custom, simpler entity models that capture introspection details about the input code. For example, a custom <code>Type</code> class representing symbols in the input code which contains data points that are relevant to your use case. Certainly, this is what typical front-end development encourages, a separation of internal, application specific &ldquo;entity&rdquo; models from external, &ldquo;domain&rdquo; models to allow for weaker coupling between your program and other systems.</p>
+<p>This is what early versions of Flumepod attempted to do, parse the raw <code>analyzer</code> models obtained from existing code analysis into internal entity models; neatly segmenting symbols the generator encountered (such as a notifier&rsquo;s <code>State</code> type) into categories that impacted the code needing to be generated with the use of a sealed class. This included cases such as custom user types which require import resolution, generic types which represent a tree of nested parameter types, and asynchronous types which require keywords in generated functions.</p>
+<p>The problem is that creating this nice classification will ultimately be a leaky abstraction that will fail to represent all valid permutations of code that your generator might encounter. Overtime, you&rsquo;ll be forced to patch your custom type representation again and again until eventually you just end up with a Frankenstein of the <a href="https://pub.dev/documentation/analyzer/latest/dart_element_type/DartType-class.html"><code>DartType</code></a> and <a href="https://pub.dev/documentation/analyzer/latest/dart_element_element/Element-class.html"><code>Element</code></a> classes. It is primarily for this reason I have learned to disregard the aforementioned separation of models principle and opt to just operate on the raw <code>analyzer</code> types instead when introspecting on code.</p>
+<p>Furthermore, operating on the types that Dart&rsquo;s <code>analyzer</code> package gives you forces you to stay up to date with changes in the language specification due to Dart&rsquo;s sound type system and exhaustiveness checks.</p>
+<p>Type-safety brings me to my second recommendation which is to make use of a package that I didn&rsquo;t know about until later on, <a href="https://pub.dev/packages/code_builder"><code>code_builder</code></a>. As the name implies, <code>code_builder</code> primarily provides type-safe builders for generating Dart code, instead of you having to manually manipulate strings with <a href="https://api.flutter.dev/flutter/dart-core/StringBuffer-class.html"><code>StringBuffer</code></a> or interpolation.</p>
+<p>A simple generator for a class using the <code>code_builder</code> package might look as follows&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-dart" data-lang="dart"><span style="display:flex;"><span><span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#39;package:code_builder/code_builder.dart&#39;</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">import</span> <span style="color:#e6db74">&#39;package:dart_style/dart_style.dart&#39;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">void</span> main() {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">final</span> clazz <span style="color:#f92672">=</span> Class((cb) <span style="color:#f92672">=&gt;</span> cb
+</span></span><span style="display:flex;"><span>		..name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Cow&#34;</span>
+</span></span><span style="display:flex;"><span>		..methods.add(
+</span></span><span style="display:flex;"><span>			Method.returnsVoid((mb) <span style="color:#f92672">=&gt;</span> mb
+</span></span><span style="display:flex;"><span>				..name <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;moo&#34;</span>
+</span></span><span style="display:flex;"><span>				..body <span style="color:#f92672">=</span> <span style="color:#66d9ef">const</span> Code(<span style="color:#e6db74">&#34;print(&#39;moo&#39;);&#34;</span>)
+</span></span><span style="display:flex;"><span>			)
+</span></span><span style="display:flex;"><span>		)
+</span></span><span style="display:flex;"><span>	);
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">final</span> emitter <span style="color:#f92672">=</span> DartEmitter();
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">final</span> formatter <span style="color:#f92672">=</span> DartFormatter(
+</span></span><span style="display:flex;"><span>		languageVersion: DartFormatter.latestLanguageVersion
+</span></span><span style="display:flex;"><span>	);
+</span></span><span style="display:flex;"><span>	print(formatter.format(<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>clazz.accept(emitter)<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>));
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Which generates&hellip;</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-dart" data-lang="dart"><span style="display:flex;"><span><span style="color:#66d9ef">class</span> <span style="color:#a6e22e">Cow</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">void</span> moo() {
+</span></span><span style="display:flex;"><span>		print(<span style="color:#e6db74">&#39;moo&#39;</span>);
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Whilst this is a trivial example, the API improves the &ldquo;glanceability&rdquo; of the code to pick out which part you are interested in. Something you&rsquo;ll appreciate six months down the road when it comes time for maintenance.</p>
+<p>Another very useful feature of the <code>code_builder</code> package is the top-level <a href="https://pub.dev/documentation/code_builder/latest/code_builder/refer.html"><code>refer</code></a> function. A naive code generator implementation may simply generate a series of import statements at the top of the output file for the types it determines it needs. However, this fails when two imported libraries both declare the same symbol, <code>MyClass</code> for example. To resolve this issue, most code generators either piggy-back off the input file via <code>part</code> directives or uniquely prefix imports. In the latter case, keeping track of what URI is prefixed with what can be non-trivial but <code>refer</code> handles this nicely by generating the import statements and matching the import prefixes automatically!</p>
+<p>My final recommendation is to highlight the importance of dog-fooding the code generator on large, real code bases that multiple people contribute to. Whilst you can have all the unit and golden tests you want, there will be cases you won&rsquo;t anticipate. When you do find such a defect, be sure to add a test covering it in your automated testing to avoid it becoming a problem again in future.</p>
+<p>One such case for Flumepod was when a colleague tried to generate a mock of a class that included a getter method, a pattern which I typically don&rsquo;t use when I write Riverpod notifiers, so unintentionally omitted from Flumepod. The mocked class simply didn&rsquo;t include a stub for the method so there was no means by which to stub or verify calls on the getter. In the end it was a simple fix to take note of getter and setter declarations in the original notifier class definitions but it took another pair of eyes to highlight the issue which I otherwise would have been blind to.</p>
+<p>I hope this brief account of my learnings from implementing a code generator proved insightful and will help you to avoid falling into the same traps. Also, if you do routinely use Riverpod for state management in Dart/Flutter, perhaps give <a href="https://pub.dev/packages/flumepod">Flumepod</a> a go to improve your unit testing workflow. Lastly, thank you for reading!</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="http://localhost:1313/tags/dart/">Dart</a></li>
+      <li><a href="http://localhost:1313/tags/flutter/">Flutter</a></li>
+    </ul>
+
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+        <span>All content is human-written · Copyright Tom Handcock 2026</span> · 
+
+    
+    
+    <span>
+        Powered by
+        <a href="https://gohugo.io/?utm_source=papermod" rel="noopener" target="_blank">Hugo</a> &
+        <a href="https://github.com/adityatelange/hugo-PaperMod/" rel="noopener" target="_blank">PaperMod</a>
+    </span>
+</footer>
+<a href="#top" id="top-link" class="top-link hidden" aria-label="go to top" title="Go to Top (Alt + G)" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevrons-up">
+        <polyline points="17 11 12 6 7 11"></polyline>
+        <polyline points="17 18 12 13 7 18"></polyline>
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu');
+    if (menu) {
+        
+        const scrollPosition = localStorage.getItem("menu-scroll-position");
+        if (scrollPosition) {
+            menu.scrollLeft = parseInt(scrollPosition, 10);
+        }
+        
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var toplink = document.getElementById("top-link");
+    window.onscroll = function () {
+        const scrollThreshold = window.innerHeight;
+        if (document.body.scrollTop > scrollThreshold || document.documentElement.scrollTop > scrollThreshold) {
+            toplink.classList.remove("hidden");
+        } else {
+            toplink.classList.add("hidden");
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        const html = document.querySelector("html");
+        if (html.dataset.theme === "dark") {
+            html.dataset.theme = 'light';
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            html.dataset.theme = 'dark';
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+</body>
+
+</html>

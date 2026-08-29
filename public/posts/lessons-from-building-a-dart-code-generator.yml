@@ -1,0 +1,48 @@
+---
+title: "Lessons from building a Dart code generator"
+date: 2026-08-23T12:00:00+00:00
+# weight: 1
+# aliases: ["/first"]
+tags: ["posts","flumepod"]
+author: "Me"
+# author: ["Me", "You"] # multiple authors
+showToc: false
+TocOpen: false
+draft: false
+hidemeta: false
+comments: false
+description: "Desc Text."
+canonicalURL: "https://canonical.url/to/page"
+disableHLJS: true # to disable highlightjs
+disableShare: false
+disableHLJS: false
+hideSummary: false
+searchHidden: true
+ShowReadingTime: true
+ShowBreadCrumbs: true
+ShowPostNavLinks: true
+ShowWordCount: true
+ShowRssButtonInSectionTermList: true
+UseHugoToc: true
+cover:
+    image: "<image path/url>" # image path/url
+    alt: "<alt text>" # alt text
+    caption: "<text>" # display caption under cover
+    relative: false # when using page bundles set this to true
+    hidden: true # only hide on current single page
+editPost:
+    URL: "https://github.com/<path_to_repo>/content"
+    Text: "Suggest Changes" # edit text
+    appendFilePath: true # to append file path to Edit link
+---
+I have recently published [Flumepod](https://www.linkedin.com/in/tomrhandcock/), a code generator for bridging the gap between Riverpod and Mockito; allowing you to generate mocks of `Notifier` classes for stubbing and verification. This is a post about some of the things I learnt along the way that I wish I had known from the start in the hopes it will help other developers.
+
+Code generators, especially those that use introspection on existing code, are an inherently messy domain. Even in a relatively streamlined language such as Dart, there are many edge cases you have to be mindful of such as generic types, handling duplicate symbols when resolving imports, and how asynchronous code can impact [the "colour" of the output](https://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/). Not to mention keeping the generator source coherent and maintainable as the language specification changes overtime.
+
+It may be tempting then to try and abstract away all of this complexity behind custom domain models that capture introspection details about code, such as a custom `Type` class containing fields that are relevant to your implementation. Certainly, this is what typical front-end development encourages, a separation of application specific "entity models" from "domain" models to allow for weaker coupling.
+
+This is what early versions of Flumepod attempted to do; neatly segmenting the return type of a method into categories that required some mode of handling, such as custom user types which require import resolution, generic types which represent a tree of parameter types, and asynchronous types which require keywords.
+
+The problem is that creating this nice classification will ultimately be a leaky abstraction that will fail to represent all valid permutations of code that your generator might encounter. Overtime, you'll be forced to patch your type system again and again until eventually you just end up with a Frankenstein of the [`DartType`](https://pub.dev/documentation/analyzer/latest/dart_element_type/DartType-class.html) and [`Element`](https://pub.dev/documentation/analyzer/latest/dart_element_element/Element-class.html) classes. It is primarily for this reason I disregard the aforementioned separation of models and opt to just operate on these types instead when introspecting code.
+
+Furthermore, using the types that Dart's `analyzer` package gives you forces you to stay up to date with changes in the language specification due to Dart's sound type system and exhaustiveness checks.

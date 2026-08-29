@@ -1,4 +1,58 @@
 baseURL: https://example.org/
-locale: en-us
-title: My New Hugo Project
+locale: en-gb
+title: Tom Handcock
 theme: ["PaperMod"]
+mainsections: ["posts"]
+copyright: All content is human-written · Copyright Tom Handcock 2026
+
+languages:
+  en:
+    languageName: "English"
+    weight: 1
+    menu:
+      main:
+        - name: Posts
+          url: /posts/
+          weight: 10
+
+privacy:
+  disqus:
+    disable: true
+  googleAnalytics:
+    disable: true
+    respectDoNotTrack: true
+  instagram:
+    disable: true
+    simple: false
+  vimeo:
+    disable: true
+    enableDNT: true
+    simple: false
+  x:
+    disable: true
+    enableDNT: false
+    simple: false
+  youTube:
+    disable: false
+    privacyEnhanced: true
+
+params:
+  title: Tom Handcock
+  description: The home of things made by Tom Handcock.
+  keywords: [Blog, Portfolio]
+  homeInfoParams:
+    Title: Hi folks
+    Content: |
+      I'm a Mobile Software Engineer based in Manchester, UK. I work with a range of technologies but specialise in Flutter, Kotlin Multiplatform, and Android.
+      You may also see me elsewhere climbing or hiking in the outdoors on ill-advised adventures.
+  socialIcons:
+    - name: github
+      url: https://github.com/TomRHandcock
+    - name: linkedin
+      url: https://www.linkedin.com/in/tomrhandcock/
+  menu:
+    main:
+      - identifier: posts
+        name: posts
+        url: /posts/
+        weight: 10

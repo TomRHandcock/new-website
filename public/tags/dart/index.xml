@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Tom Handcock</title>
-    <link>http://localhost:1313/</link>
-    <description>Recent content on Tom Handcock</description>
+    <title>Dart on Tom Handcock</title>
+    <link>http://localhost:1313/tags/dart/</link>
+    <description>Recent content in Dart on Tom Handcock</description>
     <generator>Hugo</generator>
     <language>en-gb</language>
     <copyright>All content is human-written · Copyright Tom Handcock 2026</copyright>
     <lastBuildDate>Sat, 29 Aug 2026 12:00:00 +0100</lastBuildDate>
-    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/dart/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Lessons from building a Dart code generator</title>
       <link>http://localhost:1313/posts/lessons-from-building-a-dart-code-generator/</link>

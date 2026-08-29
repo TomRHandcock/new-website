@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Tom Handcock</title>
-    <link>http://localhost:1313/</link>
-    <description>Recent content on Tom Handcock</description>
+    <title>Posts on Tom Handcock</title>
+    <link>http://localhost:1313/tags/posts/</link>
+    <description>Recent content in Posts on Tom Handcock</description>
     <generator>Hugo</generator>
     <language>en-gb</language>
-    <copyright>All content is human-written · Copyright Tom Handcock 2026</copyright>
-    <lastBuildDate>Sat, 29 Aug 2026 12:00:00 +0100</lastBuildDate>
-    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 23 Aug 2026 12:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/posts/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Lessons from building a Dart code generator</title>
       <link>http://localhost:1313/posts/lessons-from-building-a-dart-code-generator/</link>
-      <pubDate>Sat, 29 Aug 2026 12:00:00 +0100</pubDate>
+      <pubDate>Sun, 23 Aug 2026 12:00:00 +0000</pubDate>
       <guid>http://localhost:1313/posts/lessons-from-building-a-dart-code-generator/</guid>
-      <description>An account of some of the learnings from implementing Flumepod.</description>
+      <description>Desc Text.</description>
     </item>
   </channel>
 </rss>
