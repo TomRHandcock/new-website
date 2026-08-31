@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="en" dir="auto" data-theme="auto">
 
-<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset="utf-8">
+<head><meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="robots" content="noindex, nofollow">
+<meta name="robots" content="index, follow">
 <title>Lessons from building a Dart code generator | Tom Handcock</title>
 <meta name="keywords" content="Dart, Flutter">
 <meta name="description" content="An account of some of the learnings from implementing Flumepod.">
 <meta name="author" content="">
-<link rel="canonical" href="http://localhost:1313/posts/lessons-from-building-a-dart-code-generator/">
+<link rel="canonical" href="https://tomrh.app/posts/lessons-from-building-a-dart-code-generator/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.cd9298b33628769aa1bc1acebbbfd7aa11ce81dfe03484d479e1907760249a1d.css" integrity="sha256-zZKYszYodpqhvBrOu7/XqhHOgd/gNITUeeGQd2Akmh0=" rel="preload stylesheet" as="style">
-<link rel="icon" href="http://localhost:1313/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="http://localhost:1313/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="http://localhost:1313/favicon-32x32.png">
-<link rel="apple-touch-icon" href="http://localhost:1313/apple-touch-icon.png">
-<link rel="mask-icon" href="http://localhost:1313/safari-pinned-tab.svg">
+<link rel="icon" href="https://tomrh.app/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://tomrh.app/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://tomrh.app/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://tomrh.app/apple-touch-icon.png">
+<link rel="mask-icon" href="https://tomrh.app/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" hreflang="en" href="http://localhost:1313/posts/lessons-from-building-a-dart-code-generator/">
+<link rel="alternate" hreflang="en" href="https://tomrh.app/posts/lessons-from-building-a-dart-code-generator/">
 <noscript>
     <style>
         #theme-toggle,
@@ -64,13 +64,78 @@
         document.querySelector("html").dataset.theme = 'light';
     }
 
+</script><meta property="og:url" content="https://tomrh.app/posts/lessons-from-building-a-dart-code-generator/">
+  <meta property="og:site_name" content="Tom Handcock">
+  <meta property="og:title" content="Lessons from building a Dart code generator">
+  <meta property="og:description" content="An account of some of the learnings from implementing Flumepod.">
+  <meta property="og:locale" content="en_gb">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2026-08-29T12:00:00+01:00">
+    <meta property="article:modified_time" content="2026-08-29T12:00:00+01:00">
+    <meta property="article:tag" content="Dart">
+    <meta property="article:tag" content="Flutter">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Lessons from building a Dart code generator">
+  <meta name="twitter:description" content="An account of some of the learnings from implementing Flumepod.">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Posts",
+      "item": "https://tomrh.app/posts/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Lessons from building a Dart code generator",
+      "item": "https://tomrh.app/posts/lessons-from-building-a-dart-code-generator/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Lessons from building a Dart code generator",
+  "name": "Lessons from building a Dart code generator",
+  "description": "An account of some of the learnings from implementing Flumepod.",
+  "keywords": [
+    "Dart", "Flutter"
+  ],
+  "articleBody": "I have recently collaborated on Flumepod, a code generator for bridging the gap between Riverpod and Mockito; allowing you to generate mocks of Notifier classes for stubbing and verification. This is a post about some of the things I learnt along the way that I wish I had known from the start, published in the hopes it will help other developers.\nCode generators, especially those that use introspection on existing code, are an inherently messy domain. You are ultimately operating with untyped strings and even in a relatively streamlined language such as Dart, there are many edge cases you have to be mindful of, such as generic types, handling duplicate symbols when resolving imports, and how asynchronous code can impact the “colour” of the output. Not to mention keeping the generator source coherent and maintainable as the language specification changes overtime.\nMost code generators rely on first analysing existing code in order to derive more code. For example, one of the most popular packages in the Dart ecosystem, Freezed, generates immutable “data classes” with a handful of utility methods from basic factory definitions. When building such a code generator, it may be tempting to try and abstract away all of the complexity in the Dart type system behind custom, simpler entity models that capture introspection details about the input code. For example, a custom Type class representing symbols in the input code which contains data points that are relevant to your use case. Certainly, this is what typical front-end development encourages, a separation of internal, application specific “entity” models from external, “domain” models to allow for weaker coupling between your program and other systems.\nThis is what early versions of Flumepod attempted to do, parse the raw analyzer models obtained from existing code analysis into internal entity models; neatly segmenting symbols the generator encountered (such as a notifier’s State type) into categories that impacted the code needing to be generated with the use of a sealed class. This included cases such as custom user types which require import resolution, generic types which represent a tree of nested parameter types, and asynchronous types which require keywords in generated functions.\nThe problem is that creating this nice classification will ultimately be a leaky abstraction that will fail to represent all valid permutations of code that your generator might encounter. Overtime, you’ll be forced to patch your custom type representation again and again until eventually you just end up with a Frankenstein of the DartType and Element classes. It is primarily for this reason I have learned to disregard the aforementioned separation of models principle and opt to just operate on the raw analyzer types instead when introspecting on code.\nFurthermore, operating on the types that Dart’s analyzer package gives you forces you to stay up to date with changes in the language specification due to Dart’s sound type system and exhaustiveness checks.\nType-safety brings me to my second recommendation which is to make use of a package that I didn’t know about until later on, code_builder. As the name implies, code_builder primarily provides type-safe builders for generating Dart code, instead of you having to manually manipulate strings with StringBuffer or interpolation.\nA simple generator for a class using the code_builder package might look as follows…\nimport 'package:code_builder/code_builder.dart'; import 'package:dart_style/dart_style.dart'; void main() { final clazz = Class((cb) =\u003e cb ..name = \"Cow\" ..methods.add( Method.returnsVoid((mb) =\u003e mb ..name = \"moo\" ..body = const Code(\"print('moo');\") ) ) ); final emitter = DartEmitter(); final formatter = DartFormatter( languageVersion: DartFormatter.latestLanguageVersion ); print(formatter.format(\"${clazz.accept(emitter)}\")); } Which generates…\nclass Cow { void moo() { print('moo'); } } Whilst this is a trivial example, the API improves the “glanceability” of the code to pick out which part you are interested in. Something you’ll appreciate six months down the road when it comes time for maintenance.\nAnother very useful feature of the code_builder package is the top-level refer function. A naive code generator implementation may simply generate a series of import statements at the top of the output file for the types it determines it needs. However, this fails when two imported libraries both declare the same symbol, MyClass for example. To resolve this issue, most code generators either piggy-back off the input file via part directives or uniquely prefix imports. In the latter case, keeping track of what URI is prefixed with what can be non-trivial but refer handles this nicely by generating the import statements and matching the import prefixes automatically!\nMy final recommendation is to highlight the importance of dog-fooding the code generator on large, real code bases that multiple people contribute to. Whilst you can have all the unit and golden tests you want, there will be cases you won’t anticipate. When you do find such a defect, be sure to add a test covering it in your automated testing to avoid it becoming a problem again in future.\nOne such case for Flumepod was when a colleague tried to generate a mock of a class that included a getter method, a pattern which I typically don’t use when I write Riverpod notifiers, so unintentionally omitted from Flumepod. The mocked class simply didn’t include a stub for the method so there was no means by which to stub or verify calls on the getter. In the end it was a simple fix to take note of getter and setter declarations in the original notifier class definitions but it took another pair of eyes to highlight the issue which I otherwise would have been blind to.\nI hope this brief account of my learnings from implementing a code generator proved insightful and will help you to avoid falling into the same traps. Also, if you do routinely use Riverpod for state management in Dart/Flutter, perhaps give Flumepod a go to improve your unit testing workflow. Lastly, thank you for reading!\n",
+  "wordCount" : "971",
+  "inLanguage": "en",
+  "datePublished": "2026-08-29T12:00:00+01:00",
+  "dateModified": "2026-08-29T12:00:00+01:00",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://tomrh.app/posts/lessons-from-building-a-dart-code-generator/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Tom Handcock",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://tomrh.app/favicon.ico"
+    }
+  }
+}
 </script>
 </head>
 <body id="top">
     <header class="header">
     <nav class="header-nav">
         <div class="logo">
-            <a href="http://localhost:1313/" accesskey="h" title="Tom Handcock (Alt + H)">Tom Handcock</a>
+            <a href="https://tomrh.app/" accesskey="h" title="Tom Handcock (Alt + H)">Tom Handcock</a>
             <div class="logo-switches">
                 <button id="theme-toggle" class="theme-toggle" accesskey="t" title="(Alt + T)" aria-label="Toggle theme">
                     <svg class="moon" xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
@@ -96,7 +161,7 @@
         </div>
         <ul id="menu" class="menu">
             <li>
-                <a href="http://localhost:1313/posts/" title="Posts">
+                <a href="https://tomrh.app/posts/" title="Posts">
                     <span>Posts</span>
                 </a>
             </li>
@@ -172,8 +237,8 @@
 
   <footer class="post-footer">
     <ul class="post-tags">
-      <li><a href="http://localhost:1313/tags/dart/">Dart</a></li>
-      <li><a href="http://localhost:1313/tags/flutter/">Flutter</a></li>
+      <li><a href="https://tomrh.app/tags/dart/">Dart</a></li>
+      <li><a href="https://tomrh.app/tags/flutter/">Flutter</a></li>
     </ul>
 
   </footer>
