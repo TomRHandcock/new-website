@@ -7,12 +7,12 @@
     <generator>Hugo</generator>
     <language>en-gb</language>
     <copyright>All content is human-written · Copyright Tom Handcock 2026</copyright>
-    <lastBuildDate>Sat, 29 Aug 2026 12:00:00 +0100</lastBuildDate>
+    <lastBuildDate>Thu, 10 Sep 2026 12:00:00 +0100</lastBuildDate>
     <atom:link href="https://tomrh.app/tags/dart/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Lessons from building a Dart code generator</title>
       <link>https://tomrh.app/posts/lessons-from-building-a-dart-code-generator/</link>
-      <pubDate>Sat, 29 Aug 2026 12:00:00 +0100</pubDate>
+      <pubDate>Thu, 10 Sep 2026 12:00:00 +0100</pubDate>
       <guid>https://tomrh.app/posts/lessons-from-building-a-dart-code-generator/</guid>
       <description>An account of some of the learnings from implementing Flumepod.</description>
     </item>
